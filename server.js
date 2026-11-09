@@ -1,266 +1,644 @@
+// ========================================
+// STUDENTHUB - EXPRESS SERVER
+// ========================================
+
 const express = require("express");
-const initSqlJs = require("sql.js");
-const fs = require("fs");
 const path = require("path");
+const fs = require("fs");
+const initSqlJs = require("sql.js");
 
 const app = express();
-const PORT = 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+
+// ========================================
+// CONFIGURATION
+// ========================================
+
+const PORT = process.env.PORT || 3000;
 
 const DB_PATH = path.join(__dirname, "database.db");
 
 let db;
 
-function saveDatabase() {
-    const data = db.export();
-    fs.writeFileSync(DB_PATH, Buffer.from(data));
-}
 
-async function startServer() {
+// ========================================
+// DATABASE INITIALIZATION
+// ========================================
 
-    const SQL = await initSqlJs({
-        locateFile: file =>
-            path.join(__dirname, "node_modules/sql.js/dist", file)
-    });
+async function initializeDatabase() {
+
+    const SQL = await initSqlJs();
 
     if (fs.existsSync(DB_PATH)) {
+
         const file = fs.readFileSync(DB_PATH);
+
         db = new SQL.Database(file);
+
+        console.log("Existing database loaded.");
+
     } else {
+
         db = new SQL.Database();
+
+        console.log("New database created.");
+
     }
+
+    // CREATE STUDENTS TABLE
 
     db.run(`
         CREATE TABLE IF NOT EXISTS students (
+
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             student_id TEXT UNIQUE NOT NULL,
+
             name TEXT NOT NULL,
+
             email TEXT,
+
             course TEXT,
+
             year_level TEXT,
+
             status TEXT DEFAULT 'Active',
+
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
         )
     `);
 
     saveDatabase();
 
-    // DASHBOARD STATISTICS
+    console.log("Database initialized successfully.");
 
-    app.get("/api/dashboard", (req, res) => {
+}
 
-        const total = db.exec(
-            "SELECT COUNT(*) FROM students"
-        )[0].values[0][0];
 
-        const active = db.exec(
-            "SELECT COUNT(*) FROM students WHERE status = 'Active'"
-        )[0].values[0][0];
+// ========================================
+// SAVE DATABASE
+// ========================================
 
-        const inactive = db.exec(
-            "SELECT COUNT(*) FROM students WHERE status = 'Inactive'"
-        )[0].values[0][0];
+function saveDatabase() {
+
+    const data = db.export();
+
+    const buffer = Buffer.from(data);
+
+    fs.writeFileSync(DB_PATH, buffer);
+
+}
+
+
+// ========================================
+// DATABASE HELPER
+// ========================================
+
+function getAll(sql, params = []) {
+
+    const statement = db.prepare(sql);
+
+    statement.bind(params);
+
+    const results = [];
+
+    while (statement.step()) {
+
+        results.push(statement.getAsObject());
+
+    }
+
+    statement.free();
+
+    return results;
+
+}
+
+
+function getOne(sql, params = []) {
+
+    return getAll(sql, params)[0] || null;
+
+}
+
+
+// ========================================
+// FRONTEND CONNECTION
+// ========================================
+
+app.use(express.static(path.join(__dirname, "public")));
+
+
+// ========================================
+// DASHBOARD STATISTICS
+// ========================================
+
+app.get("/api/dashboard", (req, res) => {
+
+    try {
+
+        const total = getOne(`
+            SELECT COUNT(*) AS total
+            FROM students
+        `);
+
+        const active = getOne(`
+            SELECT COUNT(*) AS total
+            FROM students
+            WHERE status = 'Active'
+        `);
+
+        const inactive = getOne(`
+            SELECT COUNT(*) AS total
+            FROM students
+            WHERE status = 'Inactive'
+        `);
 
         res.json({
-            total,
-            active,
-            inactive
+
+            total: total.total,
+
+            active: active.total,
+
+            inactive: inactive.total
+
         });
-    });
 
-    // GET ALL STUDENTS
+    } catch (error) {
 
-    app.get("/api/students", (req, res) => {
+        console.error(error);
+
+        res.status(500).json({
+
+            message: "Failed to load dashboard statistics."
+
+        });
+
+    }
+
+});
+
+
+// ========================================
+// GET ALL STUDENTS
+// SEARCH STUDENTS
+// ========================================
+
+app.get("/api/students", (req, res) => {
+
+    try {
 
         const search = req.query.search || "";
 
-        const statement = db.prepare(`
-            SELECT * FROM students
-            WHERE student_id LIKE $search
-            OR name LIKE $search
-            OR email LIKE $search
-            OR course LIKE $search
+        const students = getAll(`
+
+            SELECT *
+            FROM students
+
+            WHERE
+                student_id LIKE ?
+                OR name LIKE ?
+                OR email LIKE ?
+                OR course LIKE ?
+
             ORDER BY id DESC
-        `);
 
-        statement.bind({
-            $search: `%${search}%`
-        });
+        `, [
 
-        const students = [];
+            `%${search}%`,
+            `%${search}%`,
+            `%${search}%`,
+            `%${search}%`
 
-        while (statement.step()) {
-            students.push(statement.getAsObject());
-        }
-
-        statement.free();
+        ]);
 
         res.json(students);
-    });
 
-    // GET ONE STUDENT
+    } catch (error) {
 
-    app.get("/api/students/:id", (req, res) => {
+        console.error(error);
 
-        const result = db.exec(
-            "SELECT * FROM students WHERE id = ?",
-            [Number(req.params.id)]
-        );
+        res.status(500).json({
 
-        if (!result.length || !result[0].values.length) {
-            return res.status(404).json({
-                message: "Student not found"
-            });
-        }
+            message: "Failed to retrieve students."
 
-        const student = {};
-
-        result[0].columns.forEach((column, index) => {
-            student[column] = result[0].values[0][index];
         });
 
+    }
+
+});
+
+
+// ========================================
+// GET ONE STUDENT
+// ========================================
+
+app.get("/api/students/:id", (req, res) => {
+
+    try {
+
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id < 1) {
+
+            return res.status(400).json({
+
+                message: "Invalid student ID."
+
+            });
+
+        }
+
+        const student = getOne(`
+
+            SELECT *
+            FROM students
+            WHERE id = ?
+
+        `, [id]);
+
+        if (!student) {
+
+            return res.status(404).json({
+
+                message: "Student not found."
+
+            });
+
+        }
+
         res.json(student);
-    });
 
-    // ADD STUDENT
+    } catch (error) {
 
-    app.post("/api/students", (req, res) => {
+        console.error(error);
+
+        res.status(500).json({
+
+            message: "Failed to retrieve student."
+
+        });
+
+    }
+
+});
+
+
+// ========================================
+// ADD NEW STUDENT
+// CREATE
+// ========================================
+
+app.post("/api/students", (req, res) => {
+
+    try {
 
         const {
+
             student_id,
             name,
             email,
             course,
             year_level,
             status
+
         } = req.body;
 
         if (!student_id || !name) {
+
             return res.status(400).json({
-                message: "Student ID and name are required"
+
+                message: "Student ID and name are required."
+
             });
+
         }
 
-        try {
+        const existing = getOne(`
 
-            db.run(`
-                INSERT INTO students
-                (student_id, name, email, course, year_level, status)
-                VALUES (?, ?, ?, ?, ?, ?)
-            `, [
+            SELECT id
+            FROM students
+            WHERE student_id = ?
+
+        `, [student_id.trim()]);
+
+        if (existing) {
+
+            return res.status(409).json({
+
+                message: "Student ID already exists."
+
+            });
+
+        }
+
+        db.run(`
+
+            INSERT INTO students (
+
                 student_id,
                 name,
-                email || "",
-                course || "",
-                year_level || "",
-                status || "Active"
-            ]);
+                email,
+                course,
+                year_level,
+                status
 
-            saveDatabase();
+            )
 
-            res.status(201).json({
-                message: "Student added successfully"
+            VALUES (?, ?, ?, ?, ?, ?)
+
+        `, [
+
+            student_id.trim(),
+            name.trim(),
+            email || "",
+            course || "",
+            year_level || "",
+            status || "Active"
+
+        ]);
+
+        saveDatabase();
+
+        res.status(201).json({
+
+            message: "Student added successfully!",
+
+            id: getOne(
+                "SELECT last_insert_rowid() AS id"
+            ).id
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            message: "Failed to add student."
+
+        });
+
+    }
+
+});
+
+
+// ========================================
+// UPDATE STUDENT
+// UPDATE
+// ========================================
+
+app.put("/api/students/:id", (req, res) => {
+
+    try {
+
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id < 1) {
+
+            return res.status(400).json({
+
+                message: "Invalid student ID."
+
             });
 
-        } catch (error) {
-
-            res.status(400).json({
-                message: "Student ID already exists or invalid data"
-            });
         }
-    });
-
-    // UPDATE STUDENT
-
-    app.put("/api/students/:id", (req, res) => {
 
         const {
+
             student_id,
             name,
             email,
             course,
             year_level,
             status
+
         } = req.body;
 
-        try {
+        if (!student_id || !name) {
 
-            db.run(`
-                UPDATE students SET
+            return res.status(400).json({
+
+                message: "Student ID and name are required."
+
+            });
+
+        }
+
+        const student = getOne(`
+
+            SELECT id
+            FROM students
+            WHERE id = ?
+
+        `, [id]);
+
+        if (!student) {
+
+            return res.status(404).json({
+
+                message: "Student not found."
+
+            });
+
+        }
+
+        const duplicate = getOne(`
+
+            SELECT id
+            FROM students
+            WHERE student_id = ?
+            AND id != ?
+
+        `, [student_id.trim(), id]);
+
+        if (duplicate) {
+
+            return res.status(409).json({
+
+                message: "Student ID already belongs to another student."
+
+            });
+
+        }
+
+        db.run(`
+
+            UPDATE students
+
+            SET
+
                 student_id = ?,
                 name = ?,
                 email = ?,
                 course = ?,
                 year_level = ?,
                 status = ?
-                WHERE id = ?
-            `, [
-                student_id,
-                name,
-                email || "",
-                course || "",
-                year_level || "",
-                status || "Active",
-                Number(req.params.id)
-            ]);
 
-            if (db.getRowsModified() === 0) {
-                return res.status(404).json({
-                    message: "Student not found"
-                });
-            }
+            WHERE id = ?
 
-            saveDatabase();
+        `, [
 
-            res.json({
-                message: "Student updated successfully"
-            });
+            student_id.trim(),
+            name.trim(),
+            email || "",
+            course || "",
+            year_level || "",
+            status || "Active",
+            id
 
-        } catch (error) {
-
-            res.status(400).json({
-                message: "Unable to update student"
-            });
-        }
-    });
-
-    // DELETE STUDENT
-
-    app.delete("/api/students/:id", (req, res) => {
-
-        db.run(
-            "DELETE FROM students WHERE id = ?",
-            [Number(req.params.id)]
-        );
-
-        if (db.getRowsModified() === 0) {
-            return res.status(404).json({
-                message: "Student not found"
-            });
-        }
+        ]);
 
         saveDatabase();
 
         res.json({
-            message: "Student deleted successfully"
+
+            message: "Student updated successfully!"
+
         });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            message: "Failed to update student."
+
+        });
+
+    }
+
+});
+
+
+// ========================================
+// DELETE STUDENT
+// DELETE
+// ========================================
+
+app.delete("/api/students/:id", (req, res) => {
+
+    try {
+
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id < 1) {
+
+            return res.status(400).json({
+
+                message: "Invalid student ID."
+
+            });
+
+        }
+
+        const student = getOne(`
+
+            SELECT id
+            FROM students
+            WHERE id = ?
+
+        `, [id]);
+
+        if (!student) {
+
+            return res.status(404).json({
+
+                message: "Student not found."
+
+            });
+
+        }
+
+        db.run(`
+
+            DELETE FROM students
+            WHERE id = ?
+
+        `, [id]);
+
+        saveDatabase();
+
+        res.json({
+
+            message: "Student deleted successfully!"
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            message: "Failed to delete student."
+
+        });
+
+    }
+
+});
+
+
+// ========================================
+// API ERROR HANDLING
+// ========================================
+
+app.use("/api", (req, res) => {
+
+    res.status(404).json({
+
+        message: "API endpoint not found."
+
     });
 
-    // START SERVER
+});
 
-    app.listen(PORT, "0.0.0.0", () => {
 
-        console.log("--------------------------------");
-        console.log(" STUDENTHUB SERVER IS RUNNING");
-        console.log("--------------------------------");
-        console.log(` http://localhost:${PORT}`);
-        console.log("--------------------------------");
+// ========================================
+// SERVER START
+// ========================================
 
-    });
+async function startServer() {
+
+    try {
+
+        await initializeDatabase();
+
+        app.listen(PORT, "0.0.0.0", () => {
+
+            console.log("--------------------------------");
+
+            console.log("STUDENTHUB SERVER STARTED");
+
+            console.log("--------------------------------");
+
+            console.log(`Port: ${PORT}`);
+
+            console.log(`Local: http://localhost:${PORT}`);
+
+            console.log("Database: SQLite");
+
+            console.log("Status: Running");
+
+            console.log("--------------------------------");
+
+        });
+
+    } catch (error) {
+
+        console.error("Server startup failed:", error);
+
+        process.exit(1);
+
+    }
+
 }
 
-startServer().catch(error => {
-    console.error("Server startup failed:", error);
-});
+
+startServer();

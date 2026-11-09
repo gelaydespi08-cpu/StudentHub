@@ -1,15 +1,13 @@
 {
   "name": "studenthub",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Student Management Dashboard",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "type": "commonjs",
   "dependencies": {
-    "express": "^5.3.0",
-    "sql.js": "^1.15.2"
+    "express": "^5.1.0",
+    "sql.js": "^1.13.0"
   }
 }
