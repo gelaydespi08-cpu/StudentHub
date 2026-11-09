@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudentHub | Management System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">
+                <i data-lucide="graduation-cap"></i>
+            </div>
+            <div>
+                <h2>StudentHub</h2>
+                <span>MANAGEMENT SYSTEM</span>
+            </div>
+            <button class="close-sidebar" id="closeSidebar">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="nav-label">MENU</div>
+
+        <nav class="navigation">
+
+            <a href="#" class="nav-link active" data-page="dashboard">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="#" class="nav-link" data-page="students">
+                <i data-lucide="users"></i>
+                <span>Students</span>
+                <span class="nav-count" id="sidebarCount">0</span>
+            </a>
+
+            <a href="#" class="nav-link" data-page="courses">
+                <i data-lucide="book-open"></i>
+                <span>Courses</span>
+            </a>
+
+            <a href="#" class="nav-link" data-page="attendance">
+                <i data-lucide="calendar-check"></i>
+                <span>Attendance</span>
+            </a>
+
+            <div class="nav-label">MANAGEMENT</div>
+
+            <a href="#" class="nav-link" data-page="reports">
+                <i data-lucide="chart-no-axes-combined"></i>
+                <span>Reports</span>
+            </a>
+
+            <a href="#" class="nav-link" data-page="settings">
+                <i data-lucide="settings"></i>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="help-card">
+                <div class="help-icon">
+                    <i data-lucide="headset"></i>
+                </div>
+                <h4>Need help?</h4>
+                <p>Manage your student records with ease.</p>
+            </div>
+
+            <div class="admin-profile">
+                <div class="avatar">AD</div>
+                <div class="admin-info">
+                    <strong>Administrator</strong>
+                    <span>System Admin</span>
+                </div>
+                <button id="adminMore" class="icon-button">
+                    <i data-lucide="more-horizontal"></i>
+                </button>
+
+                <div class="admin-menu" id="adminMenu">
+                    <button id="profileButton">
+                        <i data-lucide="user"></i> Profile
+                    </button>
+                    <button id="logoutButton">
+                        <i data-lucide="log-out"></i> Log out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+                <button class="icon-button menu-toggle" id="menuToggle">
+                    <i data-lucide="menu"></i>
+                </button>
+
+                <div>
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="pageSubtitle">Welcome back, Administrator!</p>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+
+                <button class="icon-button theme-toggle" id="themeToggle">
+                    <i data-lucide="moon"></i>
+                </button>
+
+                <button class="icon-button notification-button" id="notificationButton">
+                    <i data-lucide="bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+
+                <div class="topbar-avatar">AD</div>
+
+            </div>
+
+        </header>
+
+        <div class="content">
+
+            <!-- DASHBOARD PAGE -->
+            <section class="page-view" id="dashboardPage">
+
+                <div class="welcome-banner">
+                    <div>
+                        <span class="eyebrow">STUDENT MANAGEMENT</span>
+                        <h1>Manage your students<br>with confidence.</h1>
+                        <p>Everything you need to keep your academic records organized.</p>
+
+                        <button class="primary-button" id="welcomeAddButton">
+                            <i data-lucide="plus"></i>
+                            Add New Student
+                        </button>
+                    </div>
+
+                    <div class="welcome-decoration">
+                        <i data-lucide="graduation-cap"></i>
+                    </div>
+                </div>
+
+                <!-- STATISTICS -->
+                <div class="section-heading">
+                    <div>
+                        <h3>Overview</h3>
+                        <p>Here's what's happening in your system.</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon purple">
+                                <i data-lucide="users"></i>
+                            </div>
+                            <span class="stat-tag">TOTAL</span>
+                        </div>
+                        <h2 id="totalStudents">0</h2>
+                        <p>Total Students</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon green">
+                                <i data-lucide="user-check"></i>
+                            </div>
+                            <span class="stat-tag">ACTIVE</span>
+                        </div>
+                        <h2 id="activeStudents">0</h2>
+                        <p>Active Students</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon orange">
+                                <i data-lucide="user-x"></i>
+                            </div>
+                            <span class="stat-tag">INACTIVE</span>
+                        </div>
+                        <h2 id="inactiveStudents">0</h2>
+                        <p>Inactive Students</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon blue">
+                                <i data-lucide="book-open"></i>
+                            </div>
+                            <span class="stat-tag">COURSES</span>
+                        </div>
+                        <h2 id="totalCourses">0</h2>
+                        <p>Available Courses</p>
+                    </div>
+
+                </div>
+
+                <!-- RECENT STUDENTS -->
+                <div class="section-heading recent-heading">
+                    <div>
+                        <h3>Recent Students</h3>
+                        <p>Recently added student records.</p>
+                    </div>
+
+                    <button class="text-button" id="viewAllStudents">
+                        View All <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="panel">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>STUDENT</th>
+                                    <th>STUDENT ID</th>
+                                    <th>COURSE</th>
+                                    <th>YEAR</th>
+                                    <th>STATUS</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="recentStudents">
+                                <tr>
+                                    <td colspan="5" class="empty-state">
+                                        No student records yet.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- STUDENTS PAGE -->
+            <section class="page-view" id="studentsPage" hidden>
+
+                <div class="page-toolbar">
+                    <div>
+                        <h3>Student Records</h3>
+                        <p>Manage and organize all student information.</p>
+                    </div>
+
+                    <button class="primary-button" id="addStudentButton">
+                        <i data-lucide="plus"></i>
+                        Add Student
+                    </button>
+                </div>
+
+                <div class="panel">
+
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="search" id="studentSearch"
+                                placeholder="Search students...">
+                        </div>
+
+                        <button class="secondary-button" id="refreshStudents">
+                            <i data-lucide="refresh-cw"></i>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>STUDENT</th>
+                                    <th>STUDENT ID</th>
+                                    <th>COURSE</th>
+                                    <th>YEAR</th>
+                                    <th>STATUS</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="studentsTable">
+                                <tr>
+                                    <td colspan="6" class="empty-state">
+                                        Loading students...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <span id="studentCount">Showing 0 students</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- COURSES PAGE -->
+            <section class="page-view" id="coursesPage" hidden>
+
+                <div class="section-heading">
+                    <div>
+                        <h3>Courses</h3>
+                        <p>Overview of courses in your student records.</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i data-lucide="book-open"></i>
+                        </div>
+                        <h2 id="courseCount">0</h2>
+                        <p>Registered Courses</p>
+                    </div>
+                </div>
+
+                <div class="panel course-panel">
+                    <h3>Course List</h3>
+                    <div id="courseList" class="course-list">
+                        <p class="empty-state">No courses available yet.</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ATTENDANCE PAGE -->
+            <section class="page-view" id="attendancePage" hidden>
+                <div class="section-heading">
+                    <div>
+                        <h3>Attendance</h3>
+                        <p>Student attendance overview.</p>
+                    </div>
+                </div>
+
+                <div class="panel placeholder-panel">
+                    <i data-lucide="calendar-check"></i>
+                    <h3>Attendance Management</h3>
+                    <p>Attendance recording will be available here.</p>
+                </div>
+            </section>
+
+            <!-- REPORTS PAGE -->
+            <section class="page-view" id="reportsPage" hidden>
+                <div class="section-heading">
+                    <div>
+                        <h3>Reports</h3>
+                        <p>View and export student information.</p>
+                    </div>
+                </div>
+
+                <div class="panel placeholder-panel">
+                    <i data-lucide="chart-no-axes-combined"></i>
+                    <h3>Student Reports</h3>
+                    <p>Your student statistics and reports will appear here.</p>
+                    <button class="primary-button" id="exportReport">
+                        <i data-lucide="download"></i>
+                        Export CSV
+                    </button>
+                </div>
+            </section>
+
+            <!-- SETTINGS PAGE -->
+            <section class="page-view" id="settingsPage" hidden>
+                <div class="section-heading">
+                    <div>
+                        <h3>Settings</h3>
+                        <p>Customize your dashboard experience.</p>
+                    </div>
+                </div>
+
+                <div class="panel settings-panel">
+                    <div>
+                        <h3>Appearance</h3>
+                        <p>Switch between light and dark mode.</p>
+                    </div>
+
+                    <button class="secondary-button" id="settingsTheme">
+                        Toggle Theme
+                    </button>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <p>© 2026 StudentHub. Student Management System.</p>
+                <span>Designed for better management.</span>
+            </footer>
+
+        </div>
+
+    </main>
+
+</div>
+
+<!-- MOBILE OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- STUDENT MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+
+    <div class="modal">
+
+        <div class="modal-header">
+            <div>
+                <h3 id="modalTitle">Add New Student</h3>
+                <p>Enter the student's information below.</p>
+            </div>
+
+            <button class="icon-button" id="closeModal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <form id="studentForm">
+
+            <input type="hidden" id="studentDatabaseId">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>Student ID *</label>
+                    <input type="text" id="studentId"
+                        placeholder="e.g. 2026-001" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="studentName"
+                        placeholder="Enter full name" required>
+                </div>
+
+                <div class="form-group full">
+                    <label>Email Address</label>
+                    <input type="email" id="studentEmail"
+                        placeholder="student@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Course</label>
+                    <select id="studentCourse">
+                        <option value="">Select course</option>
+                        <option value="BSIT">BS Information Technology</option>
+                        <option value="BSCS">BS Computer Science</option>
+                        <option value="BSBA">BS Business Administration</option>
+                        <option value="BSED">BS Secondary Education</option>
+                        <option value="BEED">BS Elementary Education</option>
+                        <option value="BSHM">BS Hospitality Management</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Year Level</label>
+                    <select id="studentYear">
+                        <option value="">Select year</option>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                    </select>
+                </div>
+
+                <div class="form-group full">
+                    <label>Status</label>
+                    <select id="studentStatus">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="secondary-button" id="cancelModal">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-button" id="saveStudent">
+                    <i data-lucide="save"></i>
+                    Save Student
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- NOTIFICATION -->
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
